@@ -15,7 +15,7 @@ RaycastParameters.FilterType = Enum.RaycastFilterType.Whitelist;
 RaycastParameters.FilterDescendantsInstances = {Entities};
 RaycastParameters.RespectCanCollide = true;
 
-local TeleportSpeed = 10;
+local TeleportSpeed = 11.5;
 local NextFrame = RunService.Heartbeat;
 
 local function ImprovedTeleport(Target)
@@ -50,7 +50,7 @@ local function CanGoTo(Target)
     local HumanoidRootPart = Player.Character.HumanoidRootPart
     Path:ComputeAsync(HumanoidRootPart.Position, Target);
     local _, Points = pcall(Path.GetWaypoints, Path, HumanoidRootPart.Position);
-    return (_ and Points);
+    return (_ and #Points > 0 and Points);
 end;
 
 local function GetGifts()
@@ -122,6 +122,7 @@ local function FarmGift()
     if (not Gift) then print("No gift") return; end;
     local HitDetect = Gift:FindFirstChild("HitDetect") or Gift:FindFirstChild("Highlight");
     if (not HitDetect or not HitDetect:IsA("BasePart")) then return; end;
+    print(Gift)
     Goto(HitDetect.Position, Gift);
 end;
 
