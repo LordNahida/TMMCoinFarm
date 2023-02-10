@@ -15,7 +15,7 @@ RaycastParameters.FilterType = Enum.RaycastFilterType.Whitelist;
 RaycastParameters.FilterDescendantsInstances = {Entities};
 RaycastParameters.RespectCanCollide = true;
 
-local TeleportSpeed = 15;
+local TeleportSpeed = 10;
 local NextFrame = RunService.Heartbeat;
 
 local function ImprovedTeleport(Target)
@@ -42,13 +42,24 @@ local function ImprovedTeleport(Target)
     HRP.CFrame = CFrame.new(Target);
 end;
 
+local function CanGoTo(Target)
+    local Path = PathfindingService:CreatePath({
+        AgentCanClimb = true;
+        WaypointSpacing = 1;
+    });
+    local HumanoidRootPart = Player.Character.HumanoidRootPart
+    Path:ComputeAsync(HumanoidRootPart.Position, Target);
+    local _, Points = pcall(Path.GetWaypoints, Path, HumanoidRootPart.Position);
+    return (_ and Points);
+end;
+
 local function GetGifts()
     local Gifts = DebrisClient:GetChildren();
     local Mdx = #Gifts;
     for _ = 1, Mdx do
         local Gift = Gifts[_];
         if (not Gift) then break; end;
-        if (Gift.Name ~= "GiftPrefab" or not Gift:FindFirstChild("Top")) then
+        if (Gift.Name ~= "GiftPrefab" or not Gift:FindFirstChild("Top") or not Gift:FindFirstChild("HitDetect") or not CanGoTo(Gift.HitDetect.Position)) then
             table.remove(Gifts, _);
             _ = _ - 1;
             Mdx = Mdx - 1;
@@ -58,13 +69,17 @@ local function GetGifts()
 end;
 
 local function GetGiftDistance(Gift)
+    if (not Gift) then return math.huge; end;
     local HitDetect = Gift:FindFirstChild("HitDetect");
     if (not HitDetect) then return math.huge; end;
     return (Player.Character.HumanoidRootPart.Position - HitDetect.Position).Magnitude;
 end;
 
 local function GetNearestGift()
-    if (Mineables:GetChildren()[1]) then return Mineables:GetChildren()[1]; end;
+    local Mineable = Mineables:GetChildren()[1];
+    if (Mineable and Mineable:FindFirstChild("Highlight") and CanGoTo(Mineable.Highlight.Position)) then
+        return Mineable;
+    end;
     local Gifts = GetGifts();
     local ClosestGift = Gifts[1];
     local ClosestDist = GetGiftDistance(ClosestGift);
@@ -72,7 +87,7 @@ local function GetNearestGift()
     for _ = 2, #Gifts do
         local Gift = Gifts[_];
         local Dist = GetGiftDistance(Gift);
-        if (Dist < ClosestDist and Dist > 3.5) then
+        if (Dist < ClosestDist and Dist > 4) then
             ClosestDist = Dist;
             ClosestGift = Gift;
         end;
@@ -94,8 +109,7 @@ local function Goto(Target, Gift)
         if (not Points[_ + 1]) then break; end;
         local New = Points[_].Position;
         local Next = Points[_ + 1].Position;
-        if (GetNearestGift() ~= Gift) then return; end;-- Gift Switch
-        if ((HumanoidRootPart.Position - New).Magnitude > 10) then return; end;-- AC Caught on, so abort.
+        if ((HumanoidRootPart.Position - New).Magnitude > 10) then warn("AX") return; end;-- AC Caught on, so abort.
         ImprovedTeleport(Vector3.new(New.X, math.max(Next.Y, New.Y) + 3, New.Z));
     end;
 
@@ -105,13 +119,14 @@ end;
 
 local function FarmGift()
     local Gift = GetNearestGift();
-    if (not Gift) then return; end;
+    if (not Gift) then print("No gift") return; end;
     local HitDetect = Gift:FindFirstChild("HitDetect") or Gift:FindFirstChild("Highlight");
     if (not HitDetect or not HitDetect:IsA("BasePart")) then return; end;
     Goto(HitDetect.Position, Gift);
 end;
 
-while (true) do
+_G.TMMXFarm = true;
+while (_G.TMMXFarm) do
     RunService.Heartbeat:Wait();
-    pcall(FarmGift);
+    print(pcall(FarmGift));
 end;
