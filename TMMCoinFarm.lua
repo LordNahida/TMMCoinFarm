@@ -37,6 +37,7 @@ local function ImprovedTeleport(Target)
         local MappedPosition = StartingPosition + (PositionDelta * Progress);
         HRP.Velocity = Vector3.new();--Resetting the effect of gravity so it doesn't get too much and drag the player below the ground.
         HRP.CFrame = CFrame.new(MappedPosition);
+        if (HRP.Anchored) then return; end;
     until (HRP.Position - Target).magnitude <= TeleportSpeed / 20;
     HRP.Anchored = false;
     HRP.CFrame = CFrame.new(Target);
@@ -122,8 +123,10 @@ local function FarmGift()
     if (not Gift) then print("No gift") return; end;
     local HitDetect = Gift:FindFirstChild("HitDetect") or Gift:FindFirstChild("Highlight");
     if (not HitDetect or not HitDetect:IsA("BasePart")) then return; end;
-    print(Gift)
-    Goto(HitDetect.Position, Gift);
+    print(Gift);
+    if (Goto(HitDetect.Position, Gift) and Gift.Name ~= "GiftPrefab") then
+        wait(3);
+    end;
 end;
 
 _G.TMMXFarm = true;
